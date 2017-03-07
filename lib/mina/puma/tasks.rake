@@ -20,17 +20,36 @@ namespace :puma do
     puma_port_option = "-p #{fetch(:puma_port)}" if set?(:puma_port)
 
     comment "Starting Puma..."
-    command %[
+    command %{
+      echo "[debug] pumactl_cmd   : #{fetch(:pumactl_cmd)}"
+      echo "[debug] pumactl_socket: #{fetch(:pumactl_socket)}"
+      echo "[debug] puma_config   : #{fetch(:puma_config)}"
+      echo "[debug] puma_root_path: #{fetch(:puma_root_path)}"
+      echo "[debug] puma_state    : #{fetch(:puma_state)}"
+
       if [ -e "#{fetch(:pumactl_socket)}" ]; then
-        echo 'Puma is already running!';
+        echo '[debug] pumactl_socket exists'
       else
         if [ -e "#{fetch(:puma_config)}" ]; then
-          cd #{fetch(:puma_root_path)} && #{fetch(:puma_cmd)} -q -d -e #{fetch(:puma_env)} -C #{fetch(:puma_config)}
+          echo '[debug] puma_config exists; using it'
+          cd #{fetch(:puma_root_path)} && #{fetch(:pumactl_cmd)} -F #{fetch(:puma_config)} start
         else
-          cd #{fetch(:puma_root_path)} && #{fetch(:puma_cmd)} -q -d -e #{fetch(:puma_env)} -b "unix://#{fetch(:puma_socket)}" #{puma_port_option} -S #{fetch(:puma_state)} --pidfile #{fetch(:puma_pid)} --control 'unix://#{fetch(:pumactl_socket)}'
+          echo '[debug] puma_config does not exist'
+          cd #{fetch(:puma_root_path)} && #{fetch(:pumactl_cmd)} -S #{fetch(:puma_state)} -C "unix://#{fetch(:pumactl_socket)}" --pidfile #{fetch(:puma_pid)} start
         fi
       fi
-    ]
+    }
+#     command %[
+#       if [ -e "#{fetch(:pumactl_socket)}" ]; then
+#         echo 'Puma is already running!';
+#       else
+#         if [ -e "#{fetch(:puma_config)}" ]; then
+#           cd #{fetch(:puma_root_path)} && #{fetch(:puma_cmd)} -q -d -e #{fetch(:puma_env)} -C #{fetch(:puma_config)}
+#         else
+#           cd #{fetch(:puma_root_path)} && #{fetch(:puma_cmd)} -q -d -e #{fetch(:puma_env)} -b "unix://#{fetch(:puma_socket)}" #{puma_port_option} -S #{fetch(:puma_state)} --pidfile #{fetch(:puma_pid)} --control 'unix://#{fetch(:pumactl_socket)}'
+#         fi
+#       fi
+#     ]
   end
 
   desc 'Stop puma'
@@ -76,7 +95,7 @@ namespace :puma do
       if [ -e "#{fetch(:pumactl_socket)}" ]; then
         echo '[debug] pumactl_socket exists'
         if [ -e "#{fetch(:puma_config)}" ]; then
-          echo '[debug] puma_config exists'
+          echo '[debug] puma_config exists; using it'
           cd #{fetch(:puma_root_path)} && #{fetch(:pumactl_cmd)} -F #{fetch(:puma_config)} #{command}
         else
           echo '[debug] puma_config does not exist'
