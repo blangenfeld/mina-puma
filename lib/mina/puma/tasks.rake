@@ -67,10 +67,19 @@ namespace :puma do
 
   def pumactl_command(command)
     cmd =  %{
+      echo "[debug] pumactl_cmd   : #{fetch(:pumactl_cmd)}"
+      echo "[debug] pumactl_socket: #{fetch(:pumactl_socket)}"
+      echo "[debug] puma_config   : #{fetch(:puma_config)}"
+      echo "[debug] puma_root_path: #{fetch(:puma_root_path)}"
+      echo "[debug] puma_state    : #{fetch(:puma_state)}"
+
       if [ -e "#{fetch(:pumactl_socket)}" ]; then
+        echo '[debug] pumactl_socket exists'
         if [ -e "#{fetch(:puma_config)}" ]; then
+          echo '[debug] puma_config exists'
           cd #{fetch(:puma_root_path)} && #{fetch(:pumactl_cmd)} -F #{fetch(:puma_config)} #{command}
         else
+          echo '[debug] puma_config does not exist'
           cd #{fetch(:puma_root_path)} && #{fetch(:pumactl_cmd)} -S #{fetch(:puma_state)} -C "unix://#{fetch(:pumactl_socket)}" --pidfile #{fetch(:puma_pid)} #{command}
         fi
       else
